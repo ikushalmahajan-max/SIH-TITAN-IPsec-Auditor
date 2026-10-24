@@ -1,0 +1,60 @@
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*.class
+
+# Virtual environments & Secrets
+venv/
+env/
+.env
+.env.local
+.venv
+
+# Runtime artifacts & Uploads
+sih/uploads/*
+!sih/uploads/.gitkeep
+sih/reports/*.json
+sih/reports/*.pdf
+!sih/reports/.gitkeep
+*.log
+
+# OS & IDE
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Public-repository safety: local captures and archives
+*.pcap
+*.pcapng
+*.zip
+
+# Local backups and temporary patch copies
+*.bak
+*.before_*
+*.pre_*
+*_backup_*/
+
+# Local datasets and trained model artifacts (review before publishing)
+sih/dataset/*.pcap
+sih/dataset/*.pcapng
+sih/dataset/*.joblib
+sih/dataset/*.json
+
+# Generated reports and local audit output
+sih/reports/*
+
+# Backup and patch artifacts
+*.bak
+*.before_*
+*.pre_*
+*_backup_*/
+
+# Local environment and credentials
+.env*
+!.env.example
+!sih/reports/.gitkeep
+
+# Additional backup filename patterns
+*.bak_*
+*.bak.*
