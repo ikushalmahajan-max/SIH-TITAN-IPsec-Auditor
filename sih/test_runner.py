@@ -131,7 +131,11 @@ class TestTitanProductionSuite(unittest.TestCase):
         self.assertIsNone(result["pqc_readiness"]["pqc_score"])
     def test_06_existing_pcap_regression(self):
         pcap_path = BASE_DIR / "dataset" / "test_exact_336_trace.pcap"
-        self.assertTrue(pcap_path.exists(), f"Missing test PCAP: {pcap_path}")
+        if not pcap_path.exists():
+            self.skipTest(
+                "Optional regression PCAP is not included in the public repository"
+            )
+
         ok, rep, _, err = run_complete_pipeline(pcap_path)
         self.assertTrue(ok, f"Pipeline failed: {err}")
         summary = rep["traffic_summary"]
@@ -139,7 +143,6 @@ class TestTitanProductionSuite(unittest.TestCase):
         self.assertEqual(summary["esp_packets"], 320)
         self.assertEqual(summary["ike_candidates"], 8)
         self.assertEqual(rep["anti_replay_audit"]["duplicate_sequences"], 0)
-
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
