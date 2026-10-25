@@ -292,6 +292,23 @@
 </div>
 <!-- Bento Grid Layout -->
 <div class="grid grid-cols-1 md:grid-cols-12 gap-lg h-full">
+<!-- Restored original-design feature: Traffic Topology (live endpoints are populated from observed packets) -->
+<div class="md:col-span-8 bg-surface-container-lowest border border-surface-variant/30 rounded-2xl shadow-xs overflow-hidden">
+  <div class="p-4 border-b border-outline-variant/20 flex flex-wrap justify-between items-center gap-2">
+    <div><span class="text-[10px] font-bold tracking-widest uppercase text-primary font-mono">NETWORK VISIBILITY</span><h2 class="text-lg font-bold text-on-surface">Traffic Topology</h2></div>
+    <span id="topology-mode" class="text-xs font-mono px-3 py-1 rounded-full bg-surface-container text-on-surface-variant">WAITING FOR PACKETS</span>
+  </div>
+  <div class="relative p-5 md:p-7 bg-[#f8f9fa]">
+    <div class="absolute inset-0 opacity-40 pointer-events-none" style="background-image:radial-gradient(#c1c6d7 1px,transparent 1px);background-size:20px 20px"></div>
+    <div class="relative grid grid-cols-[1fr_auto_1fr] items-center gap-3 md:gap-8 min-h-[150px]">
+      <div class="rounded-xl border border-primary/30 bg-white p-3 md:p-4 text-center shadow-sm min-w-0"><span class="material-symbols-outlined text-primary text-2xl">laptop_mac</span><div class="text-[10px] uppercase tracking-wider text-outline font-bold mt-1">Source / Local</div><div id="topology-source" class="font-mono text-xs md:text-sm font-bold text-on-surface break-all mt-1">Waiting for traffic</div></div>
+      <div class="flex flex-col items-center min-w-[55px] md:min-w-[110px]"><span id="topology-protocol" class="text-[10px] md:text-xs font-mono font-bold text-primary mb-2">ESP / IKE</span><div class="relative w-full h-1.5 bg-primary/15 rounded-full overflow-hidden"><div id="topology-flow" class="h-full w-0 bg-primary rounded-full transition-all duration-300"></div></div><span id="topology-packet-count" class="text-[10px] text-outline font-mono mt-2">0 observed packets</span></div>
+      <div class="rounded-xl border border-secondary/30 bg-white p-3 md:p-4 text-center shadow-sm min-w-0"><span class="material-symbols-outlined text-secondary text-2xl">dns</span><div class="text-[10px] uppercase tracking-wider text-outline font-bold mt-1">Destination / Peer</div><div id="topology-destination" class="font-mono text-xs md:text-sm font-bold text-on-surface break-all mt-1">Waiting for traffic</div></div>
+    </div>
+    <p class="relative text-[10px] text-outline mt-3">Topology reflects the latest packet records returned by the capture API; it is not geographic geolocation.</p>
+  </div>
+</div>
+
 <!-- Left Column: Real-Time IPsec Tunnel & SA Telemetry Console -->
 <div class="md:col-span-8 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl shadow-xs p-5 md:p-6 flex flex-col justify-start gap-5">
     <!-- Header -->
@@ -437,6 +454,10 @@
                 <input id="chk-autoscroll" checked type="checkbox" class="peer sr-only">
                 <div class="w-10 h-6 bg-surface-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
             </div>
+        </label>
+        <label class="flex items-center justify-between gap-3 font-body-md text-body-md text-on-surface-variant cursor-pointer" title="ESP payload decryption requires valid session keys and supported crypto processing; this toggle does not decrypt packets by itself.">
+            <span>Show packet details <span class="block text-[10px] text-outline">ESP remains encrypted without session keys</span></span>
+            <span class="relative inline-block w-10 h-6 shrink-0"><input id="chk-packet-details" type="checkbox" class="peer sr-only"><span class="absolute inset-0 bg-surface-variant rounded-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></span></span>
         </label>
     </div>
 </div>
@@ -857,6 +878,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
 
+                if (data.packets && data.packets.length > 0) {
+                    var latest = data.packets[0];
+                    var topoSource = document.getElementById('topology-source');
+                    var topoDestination = document.getElementById('topology-destination');
+                    var topoMode = document.getElementById('topology-mode');
+                    var topoProtocol = document.getElementById('topology-protocol');
+                    var topoCount = document.getElementById('topology-packet-count');
+                    var topoFlow = document.getElementById('topology-flow');
+                    if (topoSource) topoSource.textContent = latest.src || 'Unknown source';
+                    if (topoDestination) topoDestination.textContent = latest.dst || 'Unknown destination';
+                    if (topoMode) topoMode.textContent = data.mode === 'replay' ? 'SIMULATION REPLAY' : (data.running ? 'LIVE CAPTURE' : 'CAPTURE STOPPED');
+                    if (topoProtocol) topoProtocol.textContent = latest.protocol || 'Unknown protocol';
+                    if (topoCount) topoCount.textContent = (data.packets_received || data.total_packets || data.packets.length) + ' observed packets';
+                    if (topoFlow) topoFlow.style.width = Math.min(100, Math.max(8, data.packets.length * 2)) + '%';
+                }
+
                 if (data.packets && data.packets.length > 0 && packetRows) {
                     packetRows.innerHTML = '';
                     data.packets.forEach(function(pkt) {
@@ -891,7 +928,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 });
-</script></script>
+</script>
 
 <!-- Mobile Floating Navigation Dock (iOS App Style) -->
 <nav class="md:hidden fixed bottom-4 inset-x-3 z-50 pointer-events-auto max-w-[420px] mx-auto bg-surface/90 backdrop-blur-2xl border border-outline-variant/40 rounded-full shadow-[0_12px_36px_rgba(0,0,0,0.15)] px-2 py-1.5 flex justify-around items-center transition-all select-none no-print">
